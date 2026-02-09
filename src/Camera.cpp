@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include <glm/glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 Camera::Camera(): position(0.0f, 0.0f, 3.0f),yaw(-90.0f),pitch(0.0f){}
 

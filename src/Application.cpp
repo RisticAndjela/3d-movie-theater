@@ -2,24 +2,29 @@
 #include <glad/glad.h>
 #include <iostream>
 #include "Camera.h"
-#include "HUD.h"
 #include <filesystem>
 #include <iostream>
+
+#ifdef _WIN32
+#include <windows.h>
+static std::filesystem::path getExecutableDir() {
+    char buf[MAX_PATH];
+    GetModuleFileNameA(NULL, buf, MAX_PATH);
+    return std::filesystem::path(buf).parent_path();
+}
+#else
+static std::filesystem::path getExecutableDir() {
+    return std::filesystem::current_path();
+}
+#endif
 
 static const double TARGET_FPS = 75.0;
 static const double FRAME_TIME = 1.0 / TARGET_FPS;
 Camera camera;
 double lastFrameTime;
 
-Application::Application(int w, int h): width(w), height(h),camera(glm::vec3(0.0f, 1.6f, 0.0f)),lastFrameTime(0.0),hud("assets/shaders/hud_quad.vs", "assets/shaders/hud_quad.fs"){
-
-    if (!std::filesystem::exists("assets/shaders/hud_quad.vs")) {
-        std::cerr << "Vertex shader fajl ne postoji!\n";
-    }
-
-    if (!std::filesystem::exists("assets/shaders/hud_quad.fs")) {
-        std::cerr << "Fragment shader fajl ne postoji!\n";
-    }
+Application::Application(int w, int h)
+    : width(w), height(h), camera(glm::vec3(0.0f, 1.6f, 0.0f)), lastFrameTime(0.0) {
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -44,10 +49,10 @@ Application::Application(int w, int h): width(w), height(h),camera(glm::vec3(0.0
         return;
     }
 
+    // Sada postoji GL kontekst, moguće je kreirati shader/VAO/VBO
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    hud.init();
 }
 
 void Application::run() {
@@ -69,7 +74,6 @@ void Application::run() {
         if (err != GL_NO_ERROR) {
             std::cerr << "GL Error: " << err << std::hex << err << std::endl;
         }
-        hud.draw(width, height);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

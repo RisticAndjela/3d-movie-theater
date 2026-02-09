@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 #include <glad/glad.h>
-#include <glm/glm/glm.hpp>
-#include <glm/glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class Shader {
 public:
