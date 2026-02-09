@@ -7,6 +7,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <glm/ext/matrix_clip_space.hpp>
 static std::filesystem::path getExecutableDir() {
     char buf[MAX_PATH];
     GetModuleFileNameA(NULL, buf, MAX_PATH);
@@ -88,13 +89,24 @@ void Application::run() {
 
         if (overlayInitialized) {
             glDisable(GL_DEPTH_TEST); // overlay uvek na vrhu
+
+            // Dodaj: iskljuci culling za 2D overlay
+            glDisable(GL_CULL_FACE);
+
             glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             DrawOverlayRectangle(overlayShader, overlayVAO);
+
+            glm::mat4 proj = glm::ortho(0.0f, float(width), 0.0f, float(height));
+            glUseProgram(overlayShader);
+            glUniformMatrix4fv(glGetUniformLocation(overlayShader, "projection"), 1, GL_FALSE, &proj[0][0]);
+            DrawOverlayText(overlayShader, "ANDJELA RISTIC", 30.0f, 50.0f, width, height);
+
             glDisable(GL_BLEND);
+
+            // Vrati stanje cull-a ako ti treba za 3D scenu
+            glEnable(GL_CULL_FACE);
+
             glEnable(GL_DEPTH_TEST);
-        }
-        else {
-			std::cout << "Overlay nije inicijalizovan!" << std::endl;
         }
 
         glfwSwapBuffers(window);

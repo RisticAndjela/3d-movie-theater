@@ -1,17 +1,22 @@
 ﻿#include "OverlayRectangle.h"
-#include <glad/glad.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <iostream>
+#define STB_EASY_FONT_IMPLEMENTATION
+#include "stb_easy_font.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 static float vertices[] = {
-    -0.9f,  0.9f,  // top-left
-    -0.7f,  0.9f,  // top-right
-    -0.7f,  0.7f,  // bottom-right
-    -0.9f,  0.7f   // bottom-left
+    -1.0f,  0.9f,   // top-left (leva ivica, vrh)
+    -0.7f,  0.9f,   // top-right
+    -0.7f,  0.7f,   // bottom-right
+    -1.0f,  0.7f    // bottom-left
 };
-
 
 
 static unsigned int indices[] = {
@@ -49,7 +54,7 @@ void DrawOverlayRectangle(unsigned int shaderProgram, unsigned int vao)
 
     // Setuj boju i alpha kroz uniform (npr. uniform vec4 u fragment shaderu)
     int colorLoc = glGetUniformLocation(shaderProgram, "inColor");
-    glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 0.7f); // crveno sa alpha 0.7
+    glUniform4f(colorLoc, 0.0f, 0.0f, 0.0f, 0.5f); // crveno sa alpha 0.7
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -96,4 +101,48 @@ unsigned int CreateShaderProgram(const char* vertPath, const char* fragPath) {
     glDeleteShader(fragment);
 
     return program;
+}
+
+unsigned int textVAO = 0, textVBO = 0;
+
+// inicijalizacija za tekst
+void InitOverlayText() {
+    if (textVAO) return;
+    glGenVertexArrays(1, &textVAO);
+    glGenBuffers(1, &textVBO);
+
+    glBindVertexArray(textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+}
+
+// crtanje teksta
+void DrawOverlayText(unsigned int shaderProgram, const char* text, float x, float y, int windowWidth, int windowHeight) {
+    InitOverlayText();
+    glDisable(GL_DEPTH_TEST);
+
+    glUseProgram(shaderProgram);
+
+    // postavi uniform boju
+    int colorLoc = glGetUniformLocation(shaderProgram, "inColor");
+    glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    // kreiraj ortogonalnu matricu u pixelima
+    glm::mat4 proj = glm::ortho(0.0f, float(windowWidth), 0.0f, float(windowHeight));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+
+    char buffer[9999];
+    int quads = stb_easy_font_print(30, windowHeight - 50, (char*)"ANDJELA RISTIC", NULL, buffer, sizeof(buffer));
+
+    float vertices[9999];
+    for (int i = 0; i < quads * 6 * 2; i++)
+        vertices[i] = ((short*)buffer)[i];
+
+    glBindVertexArray(textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glBufferData(GL_ARRAY_BUFFER, quads * 6 * 2 * sizeof(float), vertices, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, quads * 6);
+    glBindVertexArray(0);
 }
