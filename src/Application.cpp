@@ -3,7 +3,7 @@
 #include <iostream>
 #include "Camera.h"
 #include <filesystem>
-#include <iostream>
+#include "../assets/models/OverlayRectangle.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -35,6 +35,8 @@ Application::Application(int w, int h)
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
     window = glfwCreateWindow(mode->width, mode->height, "Cinema 3D", monitor, nullptr);
+    //window = glfwCreateWindow(800, 600, "Cinema 3D", nullptr, nullptr);
+
     if (!window) {
         std::cout << "Ne mogu da kreiram GLFW prozor!\n";
         glfwTerminate();
@@ -49,7 +51,17 @@ Application::Application(int w, int h)
         return;
     }
 
-    // Sada postoji GL kontekst, moguće je kreirati shader/VAO/VBO
+    InitOverlayRectangle();
+    auto exeDir = getExecutableDir();
+    exeDir = exeDir.parent_path();
+    exeDir = exeDir.parent_path();
+    exeDir = exeDir.parent_path();
+    std::string vertPath = (exeDir / "assets\\shaders\\overlay.vert").string();
+    std::string fragPath = (exeDir / "assets\\shaders\\overlay.frag").string();
+    overlayShader = CreateShaderProgram(vertPath.c_str(), fragPath.c_str());
+    overlayVAO = GetOverlayRectangleVAO();
+    overlayInitialized = true;
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -66,13 +78,23 @@ void Application::run() {
         lastFrameTime = currentTime;
 
         processInput(deltaTime);
-
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
             std::cerr << "GL Error: " << err << std::hex << err << std::endl;
+        }
+
+        if (overlayInitialized) {
+            glDisable(GL_DEPTH_TEST); // overlay uvek na vrhu
+            glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            DrawOverlayRectangle(overlayShader, overlayVAO);
+            glDisable(GL_BLEND);
+            glEnable(GL_DEPTH_TEST);
+        }
+        else {
+			std::cout << "Overlay nije inicijalizovan!" << std::endl;
         }
 
         glfwSwapBuffers(window);

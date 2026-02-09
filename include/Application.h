@@ -7,6 +7,9 @@ class Application {
 public:
     Application(int width, int height);
     void run();
+    unsigned int overlayShader = 0;
+    unsigned int overlayVAO = 0;
+    bool overlayInitialized = false;
 
 private:
     int width;
