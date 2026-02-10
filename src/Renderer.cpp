@@ -28,10 +28,10 @@ float quadVertices[] = {
     1.0f, 0.0f,    1.0f, 0.0f
 };
 
-
 void Renderer::drawCube(const Shader& shader, const glm::mat4& mvp) {
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, "MVP"),1, GL_FALSE, &mvp[0][0]);
 
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
+

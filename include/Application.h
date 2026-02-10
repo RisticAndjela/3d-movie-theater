@@ -3,6 +3,9 @@
 #include <GLFW/glfw3.h>
 #include "Camera.h"
 #include "figures3D/Seat3D.h"
+#include "../src/service/PersonManager.h"
+#include "../src/service/SeatService.h"
+#include "model/Person.h"
 
 class Application {
 public:
@@ -11,7 +14,10 @@ public:
     unsigned int overlayShader = 0;
     unsigned int overlayVAO = 0;
     bool overlayInitialized = false;
-	unsigned int seatShader = 0;
+    unsigned int seatShader = 0;
+
+    SeatService seatService{ 5, 10 };
+    PersonManager* personManager = nullptr;
 
 private:
     int width;
@@ -22,7 +28,7 @@ private:
     Camera camera;
     double lastFrameTime;
 
-	void processInput(double deltaTime);
+    void processInput(double deltaTime);
     void initSeats();
     void drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
         const glm::mat4& view, const glm::mat4& projection);

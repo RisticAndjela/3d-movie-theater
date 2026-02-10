@@ -1,91 +1,94 @@
-#pragma once
-#include <vector>
-#include <iostream>
-#include "../model/Seat.h"
+ï»¿#include "SeatService.h"
 
-class SeatService {
-private:
-    std::vector<std::vector<Seat>> seats; // redovi x kolone
-    int numRows;
-    int numCols;
-
-public:
-    SeatService(int rows, int cols) : numRows(rows), numCols(cols) {
+    SeatService::SeatService(int rows, int cols)
+        : numRows(rows), numCols(cols) {
         seats.resize(numRows);
-        for (int r = 0; r < numRows; ++r) {
-            for (int c = 0; c < numCols; ++c) {
+        for (int r = 0; r < numRows; ++r)
+            for (int c = 0; c < numCols; ++c)
                 seats[r].emplace_back(r, c);
-            }
-        }
     }
+	int SeatService::getNumRows() const { return numRows; }
+	int SeatService::getNumCols() const { return numCols; }
 
-    // Rezervacija / otkazivanje rezervacije klikom
-    void toggleReservation(int row, int col) {
+    void SeatService::toggleReservation(int row, int col) {
         if (!isValid(row, col)) return;
 
         Seat& seat = seats[row][col];
-        if (seat.status == SeatStatus::Free) seat.status = SeatStatus::Reserved;
-        else if (seat.status == SeatStatus::Reserved) seat.status = SeatStatus::Free;
-
-        std::cout << "Seat [" << row << "," << col << "] status: " << toString(seat.status) << "\n";
+        if (seat.status == SeatStatus::Free)
+            seat.status = SeatStatus::Reserved;
+        else if (seat.status == SeatStatus::Reserved)
+            seat.status = SeatStatus::Free;
     }
 
-    // Kupovina N susednih slobodnih sedišta
-    bool buySeats(int n) {
-        for (int r = numRows - 1; r >= 0; --r) { // kreni od zadnjeg reda
-            for (int c = numCols - n; c >= 0; --c) { // poslednjih n kolona
+    bool SeatService::buySeats(int n) {
+        if (n <= 0 || n > numCols) return false;
+
+        // od poslednjeg reda ka prvom
+        for (int r = numRows - 1; r >= 0; --r) {
+
+            // desno ka levo (desni kraj bloka)
+            for (int j = numCols - 1; j >= 0; --j) {
+                int start = j - (n - 1);
+                if (start < 0) continue;
+
                 bool canBuy = true;
-                for (int i = 0; i < n; ++i) {
-                    if (seats[r][c + i].status != SeatStatus::Free) {
+                for (int c = start; c <= j; ++c) {
+                    if (seats[r][c].status != SeatStatus::Free) {
                         canBuy = false;
                         break;
                     }
                 }
+
                 if (canBuy) {
-                    for (int i = 0; i < n; ++i) {
-                        seats[r][c + i].status = SeatStatus::Bought;
-                        std::cout << "Seat [" << r << "," << c + i << "] bought.\n";
-                    }
+                    for (int c = start; c <= j; ++c)
+                        seats[r][c].status = SeatStatus::Bought;
                     return true;
                 }
             }
         }
-        std::cout << "Not enough adjacent free seats to buy " << n << " seats.\n";
         return false;
     }
 
-    // Dohvati status sedišta
-    SeatStatus getStatus(int row, int col) const {
+    SeatStatus SeatService::getStatus(int row, int col) const {
         if (!isValid(row, col)) return SeatStatus::Free;
         return seats[row][col].status;
     }
 
-    void printSeats() const {
-        for (int r = 0; r < numRows; ++r) {
-            for (int c = 0; c < numCols; ++c) {
-                char ch = '.';
-                switch (seats[r][c].status) {
-                case SeatStatus::Free: ch = 'F'; break;
-                case SeatStatus::Reserved: ch = 'R'; break;
-                case SeatStatus::Bought: ch = 'B'; break;
-                }
-                std::cout << ch << " ";
-            }
-            std::cout << "\n";
-        }
+    std::vector<Seat*> SeatService::getBoughtSeats() {
+        std::vector<Seat*> result;
+        for (auto& row : seats)
+            for (auto& s : row)
+                if (s.status == SeatStatus::Bought)
+                    result.push_back(&s);
+        return result;
     }
 
-private:
-    bool isValid(int row, int col) const {
+    std::vector<Seat*> SeatService::getFreeSeats() {
+        std::vector<Seat*> result;
+        for (auto& row : seats)
+            for (auto& s : row)
+                if (s.status == SeatStatus::Free)
+                    result.push_back(&s);
+        return result;
+    }
+
+    void SeatService::markBought(Seat* seat) {
+        if (seat) seat->status = SeatStatus::Bought;
+    }
+
+    int SeatService::countFree() const {
+        int c = 0;
+        for (const auto& r : seats)
+            for (const auto& s : r)
+                if (s.status == SeatStatus::Free) ++c;
+        return c;
+    }
+
+    Seat* SeatService::getSeat(int row, int col) {
+        if (!isValid(row, col)) return nullptr;
+        return &seats[row][col];
+    }
+
+    bool SeatService::isValid(int row, int col) const {
         return row >= 0 && row < numRows && col >= 0 && col < numCols;
     }
-
-    std::string toString(SeatStatus status) const {
-        switch (status) {
-        case SeatStatus::Free: return "Free";
-        case SeatStatus::Reserved: return "Reserved";
-        case SeatStatus::Bought: return "Bought";
-        }
-        return "Unknown";
-    }
-};

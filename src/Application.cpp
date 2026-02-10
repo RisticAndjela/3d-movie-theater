@@ -4,11 +4,12 @@
 #include "Camera.h"
 #include <filesystem>
 #include "../assets/models/OverlayRectangle.h"
-
-#ifdef _WIN32
 #include <windows.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "model/Person.h"
+
+#ifdef _WIN32
 static std::filesystem::path getExecutableDir() {
     char buf[MAX_PATH];
     GetModuleFileNameA(NULL, buf, MAX_PATH);
@@ -72,6 +73,9 @@ Application::Application(int w, int h)
     seatShader = CreateShaderProgram(seatVert.c_str(), seatFrag.c_str());
     Seat3D::initCube();
     initSeats();
+    if (!seats3D.empty()) {
+        personManager = new PersonManager(seatService, seats3D[0]);
+    }
 }
 
 void Application::run() {
@@ -84,7 +88,11 @@ void Application::run() {
         double deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
 
+        // --- obrada inputa ---
         processInput(deltaTime);
+        personManager->update((float)deltaTime);
+
+        // --- čišćenje ekrana ---
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -93,13 +101,12 @@ void Application::run() {
             std::cerr << "GL Error: " << err << std::hex << err << std::endl;
         }
 
+        // --- overlay ---
         if (overlayInitialized) {
             glDisable(GL_DEPTH_TEST); // overlay uvek na vrhu
-
-            // Dodaj: isključi culling za 2D overlay
             glDisable(GL_CULL_FACE);
-
-            glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             glm::mat4 proj = glm::ortho(0.0f, float(width), 0.0f, float(height));
 
@@ -107,26 +114,24 @@ void Application::run() {
             glUniformMatrix4fv(glGetUniformLocation(overlayShader, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
             DrawOverlayRectangle(overlayShader, overlayVAO);
-           
+
             glDisable(GL_BLEND);
-
-            // Vrati stanje cull-a ako ti treba za 3D scenu
             glEnable(GL_CULL_FACE);
-
             glEnable(GL_DEPTH_TEST);
         }
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        glEnable(GL_DEPTH_TEST);
-
+        // --- priprema view/projection za 3D scenu ---
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 100.0f);
 
-        for (const auto& seat : seats3D) {
-            seat.draw(seatShader, view, projection);
-        }
+        glUseProgram(seatShader);
+        glUniformMatrix4fv(glGetUniformLocation(seatShader, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(seatShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
+        // --- crtanje sedista i ljudi ---
+        personManager->renderScene(seatShader);
+
+        // --- crtanje stepenica ---
         float spacingZ = 1.0f;
         float stepHeight = 0.3f;
         float startX = -((10 - 1) * 1.0f) / 2.0f;
@@ -136,14 +141,17 @@ void Application::run() {
             drawSteps(startX, endX, r, stepHeight, spacingZ, view, projection);
         }
 
+        // --- swap buffer-a i poll events ---
         glfwSwapBuffers(window);
         glfwPollEvents();
 
+        // --- limit FPS ---
         double elapsed = glfwGetTime() - currentTime;
         if (elapsed < FRAME_TIME) {
             glfwWaitEventsTimeout(FRAME_TIME - elapsed);
         }
     }
+
     glfwTerminate();
 }
 
@@ -152,6 +160,7 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+    static bool spacePressed = false;
 
     // --- Rotacija AWSD ---
     camera.processRotationKeyboard(window, (float)deltaTime);
@@ -165,11 +174,33 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) right += 1.0f;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  right -= 1.0f;
 
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed) {
+        personManager->spawnPeople();
+        spacePressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+        spacePressed = false;
+    static bool keyPressed[10] = { false };
+
+    for (int i = 1; i <= 9; i++) {
+        int key = GLFW_KEY_0 + i;
+
+        if (glfwGetKey(window, key) == GLFW_PRESS && !keyPressed[i]) {
+            seatService.buySeats(i);
+            keyPressed[i] = true;
+        }
+
+        if (glfwGetKey(window, key) == GLFW_RELEASE) {
+            keyPressed[i] = false;
+        }
+    }
+
     camera.processKeyboard(forward, right, (float)deltaTime);
 
     // --- Clamp po granicama i sedistima ---
     camera.clampToBounds();
     camera.clampToSeats(seats3D);
+
 }
 
 void Application::initSeats() {
