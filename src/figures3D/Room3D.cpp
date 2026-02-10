@@ -12,6 +12,7 @@ void Room3D::setBounds(const glm::vec3& minB_, const glm::vec3& maxB_) {
 }
 
 void renderBox(unsigned int shaderProgram, const glm::vec3& center, const glm::vec3& size, const glm::vec3& color) {
+    glUniform1i(glGetUniformLocation(shaderProgram, "useTexture"), 0);
     glm::mat4 model = glm::translate(glm::mat4(1.0f), center);
     model = glm::scale(model, size);
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));

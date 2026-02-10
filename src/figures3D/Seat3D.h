@@ -25,4 +25,5 @@ public:
 
     static void renderCube(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& color, const glm::vec3& scale = glm::vec3(1.0f));
     static void renderPerson(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& bodyColor);
+    static void renderCube(unsigned int shaderProgram, const glm::vec3 & pos, const glm::vec3 & color, bool useTexture, const glm::vec3 & scale = glm::vec3(1.0f));
 };

@@ -284,6 +284,7 @@ void Application::drawSteps(float xStart, float xEnd, int rowIndex, float stepHe
     model = glm::scale(model, glm::vec3(xEnd - xStart + 4.0f, horizontalHeight, stepDepth));
     glUniformMatrix4fv(glGetUniformLocation(seatShader, "model"), 1, GL_FALSE, &model[0][0]);
     glUniform3fv(glGetUniformLocation(seatShader, "color"), 1, &topColor[0]);
+    glUniform1i(glGetUniformLocation(seatShader, "useTexture"), 0);
     glBindVertexArray(Seat3D::cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 

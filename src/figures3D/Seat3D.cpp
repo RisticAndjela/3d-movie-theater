@@ -124,10 +124,35 @@ void Seat3D::renderCube(unsigned int shaderProgram, const glm::vec3& pos, const 
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 }
-// Render helper za osobu
+void Seat3D::renderCube(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& color, bool useTexture, const glm::vec3& scale) {
+    glUseProgram(shaderProgram);
+
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
+    model = glm::scale(model, scale);
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniform3f(glGetUniformLocation(shaderProgram, "color"), color.r, color.g, color.b);
+
+    // postavi flag u shaderu
+    glUniform1i(glGetUniformLocation(shaderProgram, "useTexture"), useTexture ? 1 : 0);
+
+    if (useTexture) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, Seat3D::seatTexture);
+        glUniform1i(glGetUniformLocation(shaderProgram, "seatTex"), 0);
+    }
+    else {
+        // optional: odveži teksturu
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    glBindVertexArray(Seat3D::cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
 void Seat3D::renderPerson(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& bodyColor) {
-    // telo
-    renderCube(shaderProgram, pos + glm::vec3(0.0f, 0.6f, 0.0f), bodyColor, glm::vec3(0.3f, 0.6f, 0.3f));
-    // glava
-    renderCube(shaderProgram, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.8f, 0.6f), glm::vec3(0.3f, 0.3f, 0.3f));
+    // telo (bez teksture)
+    renderCube(shaderProgram, pos + glm::vec3(0.0f, 0.6f, 0.0f), bodyColor, false, glm::vec3(0.3f, 0.6f, 0.3f));
+    // glava (bez teksture)
+    renderCube(shaderProgram, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.8f, 0.6f), false, glm::vec3(0.3f, 0.3f, 0.3f));
 }
