@@ -127,6 +127,15 @@ void Application::run() {
             seat.draw(seatShader, view, projection);
         }
 
+        float spacingZ = 1.0f;
+        float stepHeight = 0.3f;
+        float startX = -((10 - 1) * 1.0f) / 2.0f;
+        float endX = ((10 - 1) * 1.0f) / 2.0f;
+
+        for (int r = 1; r <= 5; ++r) {
+            drawSteps(startX, endX, r, stepHeight, spacingZ, view, projection);
+        }
+
         glfwSwapBuffers(window);
         glfwPollEvents();
 
@@ -165,20 +174,58 @@ void Application::processInput(double deltaTime) {
 
 void Application::initSeats() {
     seats3D.clear();
+
     int rows = 5;
     int cols = 10;
-    float spacing = 1.0f;  // razmak između sedišta
-    float startX = -cols / 2.0f * spacing;
-    float startZ = -5.0f; // udaljenost od platna
+    float spacingX = 1.0f;   // razmak između sedišta u redu
+    float spacingZ = 1.0f;   // razmak između redova u dubinu
+    float stepHeight = 0.3f; // koliko svaki red raste u visinu
+
+    float startX = -((cols - 1) * spacingX) / 2.0f; // centriranje oko Z ose
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             glm::vec3 pos(
-                startX + c * spacing,
-                0.25f, // visina sedišta (centar kvadra)
-                startZ - r * spacing
+                startX + c * spacingX, // X: levo-desno
+                r * stepHeight,        // Y: visina (stepeničasto)
+                -r * spacingZ - 5.0f   // Z: udaljenost od platna
             );
             seats3D.emplace_back(pos);
         }
     }
 }
+
+void Application::drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
+    const glm::mat4& view, const glm::mat4& projection)
+{
+    float yPrev = rowIndex * stepHeight;        // dno sedišta prethodnog reda
+    float zPrev = -rowIndex * spacingZ - 4.75f; // Z prethodnog reda
+
+    glm::vec3 topColor(0.2f, 0.1f, 0.15f);
+    glm::vec3 frontColor = topColor * 0.5f;
+
+    float stepDepth = spacingZ ;
+    float seatHeight = 0.3f; 
+    float horizontalHeight = 0.01f;    // debljina horizontalne ploče
+
+    // --- horizontalna ravan ---
+    glm::mat4 model = glm::mat4(1.0f);
+    float yStep = yPrev - seatHeight - 0.3f; // POD počinje na dnu kocke
+    model = glm::translate(model, glm::vec3((xStart + xEnd) / 2.0f, yStep + horizontalHeight / 2.0f, zPrev + stepDepth / 2.0f));
+    model = glm::scale(model, glm::vec3(xEnd - xStart + 4.0f, horizontalHeight, stepDepth));
+    glUniformMatrix4fv(glGetUniformLocation(seatShader, "model"), 1, GL_FALSE, &model[0][0]);
+    glUniform3fv(glGetUniformLocation(seatShader, "color"), 1, &topColor[0]);
+    glBindVertexArray(Seat3D::cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // --- vertikalna ploča ---
+    model = glm::mat4(1.0f);
+    float heightDiff = stepHeight;
+    model = glm::translate(model,glm::vec3((xStart + xEnd) / 2.0f,yStep - heightDiff / 2.0f, zPrev + stepDepth));
+    model = glm::scale(model,glm::vec3(xEnd - xStart + 4.0f, heightDiff, 0.01f));
+    glUniformMatrix4fv(glGetUniformLocation(seatShader, "model"), 1, GL_FALSE, &model[0][0]);
+    glUniform3fv(glGetUniformLocation(seatShader, "color"), 1, &frontColor[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+}
+

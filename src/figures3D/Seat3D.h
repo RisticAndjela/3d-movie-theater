@@ -13,6 +13,7 @@ public:
     Seat3D(const glm::vec3& pos, SeatStatus s = SeatStatus::Free);
     glm::mat4 getModelMatrix() const;
     glm::vec3 getColor() const;
+
     void draw(unsigned int shaderProgram, const glm::mat4& view, const glm::mat4& projection) const;
 
 

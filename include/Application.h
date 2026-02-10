@@ -24,4 +24,6 @@ private:
 
 	void processInput(double deltaTime);
     void initSeats();
+    void drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
+        const glm::mat4& view, const glm::mat4& projection);
 };
