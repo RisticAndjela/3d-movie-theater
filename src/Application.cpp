@@ -76,6 +76,21 @@ Application::Application(int w, int h)
     if (!seats3D.empty()) {
         personManager = new PersonManager(seatService, seats3D[0]);
     }
+
+    float margin = 10.0f;
+    float seatWidth = 1.0f; 
+    float seatDepth = 1.0f;
+    int rows = seatService.getNumRows();
+    int cols = seatService.getNumCols();
+
+    float spacingX = 1.0f;
+    float spacingZ = 1.0f;
+    float stepHeight = 0.3f;
+
+    float startX = -((cols - 1) * spacingX) / 2.0f - 1.0f;
+    glm::vec3 minB = glm::vec3(startX - seatWidth * 0.5f - margin, 0.0f, -rows * spacingZ - 5.0f - margin);
+    glm::vec3 maxB = glm::vec3(startX + (cols - 1) * spacingX + seatWidth * 0.5f + margin, rows * stepHeight + 2.0f + margin, 2.0f);
+    room.setBounds(minB, maxB);
 }
 
 void Application::run() {
@@ -127,6 +142,19 @@ void Application::run() {
         glUseProgram(seatShader);
         glUniformMatrix4fv(glGetUniformLocation(seatShader, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(seatShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        // --- crtanje sedista i ljudi ---
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        personManager->renderScene(seatShader);
+
+        glUseProgram(seatShader);
+        glUniformMatrix4fv(glGetUniformLocation(seatShader, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(seatShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        // nacrtaj prostoriju (pod, zidovi, plafon)
+        room.render(seatShader, view, projection);
 
         // --- crtanje sedista i ljudi ---
         glEnable(GL_CULL_FACE);
@@ -200,9 +228,9 @@ void Application::processInput(double deltaTime) {
 
     camera.processKeyboard(forward, right, (float)deltaTime);
 
-    // --- Clamp po granicama i sedistima ---
     camera.clampToBounds();
     camera.clampToSeats(seats3D);
+    camera.clampToRoom(room.minB, room.maxB);
 
 }
 
@@ -232,7 +260,7 @@ void Application::initSeats() {
 void Application::drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
     const glm::mat4& view, const glm::mat4& projection)
 {
-    float yPrev = rowIndex * stepHeight;        // dno sedišta prethodnog reda
+    float yPrev = rowIndex * stepHeight + 0.5f;        // dno sedišta prethodnog reda
     float zPrev = -rowIndex * spacingZ - 4.75f; // Z prethodnog reda
 
     glm::vec3 topColor(0.2f, 0.1f, 0.15f);

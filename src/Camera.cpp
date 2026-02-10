@@ -51,6 +51,29 @@ void Camera::clampToSeats(const std::vector<Seat3D>& seats) {
     }
 }
 
+void Camera::clampToRoom(const glm::vec3& minB, const glm::vec3& maxB) {
+    // koliko se kamera smatra "velikom" za potrebe sudara — prilagodi po osećaju
+    const float camRadius = 0.35f;
+
+    float minX = minB.x + camRadius;
+    float maxX = maxB.x - camRadius;
+
+    float minY = minB.y + camRadius + 0.1f; // ne dozvoli da uđe u donju ploču
+    float maxY = maxB.y - camRadius - 0.1f;
+
+    float minZ = minB.z + camRadius;
+    float maxZ = maxB.z - camRadius;
+
+    if (position.x < minX) position.x = minX;
+    if (position.x > maxX) position.x = maxX;
+
+    if (position.y < minY) position.y = minY;
+    if (position.y > maxY) position.y = maxY;
+
+    if (position.z < minZ) position.z = minZ;
+    if (position.z > maxZ) position.z = maxZ;
+}
+
 void Camera::processRotationKeyboard(GLFWwindow* window, float deltaTime) {
     // Rotacija u mestu: A/D za yaw, W/S za pitch
     float rotSpeed = 50.0f; // stepeni po sekundi

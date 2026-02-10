@@ -6,6 +6,7 @@
 #include "../src/service/PersonManager.h"
 #include "../src/service/SeatService.h"
 #include "model/Person.h"
+#include "../src/figures3D/Room3D.h"
 
 class Application {
 public:
@@ -18,6 +19,7 @@ public:
 
     SeatService seatService{ 5, 10 };
     PersonManager* personManager = nullptr;
+    Room3D room;
 
 private:
     int width;

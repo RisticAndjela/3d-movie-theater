@@ -18,7 +18,7 @@ glm::vec3 PersonManager::seatToWorld(int row, int col) const {
 
     return {
         startX + col * spacingX,
-        row * stepHeight,
+        row * stepHeight + 0.5f,
         -row * spacingZ - 5.0f
     };
 }

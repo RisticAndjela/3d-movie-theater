@@ -18,7 +18,7 @@ public:
 
     void clampToBounds();
     void clampToSeats(const std::vector<Seat3D>& seats);
-
+    void clampToRoom(const glm::vec3 & minB, const glm::vec3 & maxB);
     void processKeyboard(float forward, float right, float deltaTime);
     void processRotationKeyboard(GLFWwindow* window, float deltaTime);
 };
