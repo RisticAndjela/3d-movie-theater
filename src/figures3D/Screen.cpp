@@ -128,12 +128,12 @@ bool Screen::loadFramesFromFolder(const std::string& folderPath) {
     current = 0;
     return true;
 }
-
 void Screen::play() {
     if (frames.empty()) return;
     playing = true;
     acc = 0.0f;
     current = 0;
+    std::cout << "Screen::play() called, frames=" << frames.size() << "\n";
 }
 
 void Screen::stop() {

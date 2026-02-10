@@ -29,6 +29,8 @@ public:
 
     static bool rayIntersectsAABB(const glm::vec3& rayOrig, const glm::vec3& rayDir, const glm::vec3& minB, const glm::vec3& maxB);
 
+    glm::vec3 seatToWorldLocal(int row, int col);
+
 private:
     int width;
     int height;

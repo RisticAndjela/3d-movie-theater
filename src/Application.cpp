@@ -1,13 +1,17 @@
-﻿#include "Application.h"
+﻿#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+#include "Application.h"
 #include <glad/glad.h>
 #include <iostream>
-#include "Camera.h"
 #include <filesystem>
 #include "../assets/models/OverlayRectangle.h"
-#include <windows.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "model/Person.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -89,7 +93,13 @@ Application::Application(int w, int h)
     if (!screen.loadFramesFromFolder(framesPath)) {
         std::cerr << "Warning: screen frames not loaded\n";
     }
-    screen.setFrameDuration(1.0f / 24.0f);
+    if (screen.hasFrames()) {
+        std::cout << "Screen: loaded frames for projection.\n";
+    }
+    else {
+        std::cout << "Screen: no frames loaded (check path: " << framesPath << ")\n";
+    }
+    screen.setFrameDuration(1.0f / 2.0f);
 
     float margin = 10.0f;
     float seatWidth = 1.0f; 
@@ -159,9 +169,6 @@ void Application::run() {
         glUniformMatrix4fv(glGetUniformLocation(seatShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // --- crtanje sedista i ljudi ---
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glEnable(GL_DEPTH_TEST);
         personManager->renderScene(seatShader);
 
         glUseProgram(seatShader);
@@ -170,6 +177,15 @@ void Application::run() {
 
         // nacrtaj prostoriju (pod, zidovi, plafon)
         room.render(seatShader, view, projection);
+        {
+            // dimenzije i pozicija platna unutar sobe (prilagodi ako treba)
+            glm::vec3 screenSize((room.maxB.x - room.minB.x) * 0.7f, (room.maxB.y - room.minB.y) * 0.5f, 1.0f);
+            glm::vec3 screenCenter((room.minB.x + room.maxB.x) * 0.5f,
+                room.minB.y + screenSize.y * 0.5f + 0.5f,
+                room.minB.z + 0.001f); // malo u front zida
+            screen.render(seatShader, view, projection, screenCenter, screenSize);
+        }
+        
 
         // --- crtanje sedista i ljudi ---
         glEnable(GL_CULL_FACE);
@@ -206,7 +222,6 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
-    static bool spacePressed = false;
 
     // --- Rotacija AWSD ---
     camera.processRotationKeyboard(window, (float)deltaTime);
@@ -220,26 +235,42 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) right += 1.0f;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  right -= 1.0f;
 
+    // u Application::processInput
+    static bool spacePressed = false;
+
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed) {
+        if (screen.isPlaying()) {
+            screen.stop();
+        }
+        else {
+            screen.play();
+        }
         personManager->spawnPeople();
-        screen.play();
         spacePressed = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
-        screen.stop();
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
         spacePressed = false;
+    }
+
     static bool keyPressed[10] = { false };
 
     for (int i = 1; i <= 9; i++) {
         int key = GLFW_KEY_0 + i;
 
-        if (glfwGetKey(window, key) == GLFW_PRESS && !keyPressed[i]) {
-            seatService.buySeats(i);
-            keyPressed[i] = true;
+        // u Application::processInput, zameni deo za SPACE sa ovim
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed) {
+            // toggle play/stop
+            if (screen.isPlaying()) {
+                screen.stop();
+            }
+            else {
+                personManager->spawnPeople(); // ostavi ako želiš da spawn ljudi ide pri startu
+                screen.play();
+            }
+            spacePressed = true;
         }
-
-        if (glfwGetKey(window, key) == GLFW_RELEASE) {
-            keyPressed[i] = false;
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
+            spacePressed = false;
         }
     }
 
@@ -256,24 +287,27 @@ void Application::initSeats() {
 
     int rows = 5;
     int cols = 10;
-    float spacingX = 1.0f;   // razmak između sedišta u redu
-    float spacingZ = 1.0f;   // razmak između redova u dubinu
-    float stepHeight = 0.3f; // koliko svaki red raste u visinu
+    float spacingX = 1.0f;
+    float spacingZ = 1.0f;
+    float stepHeight = 0.3f;
 
-    float startX = -((cols - 1) * spacingX) / 2.0f; // centriranje oko Z ose
+    // VISINA sedišta (ako koristiš Seat3D::size, koristi ga)
+    float seatHeight = !seats3D.empty() ? seats3D[0].size.y : 0.3f;
+    float seatHalf = seatHeight * 0.5f;
+
+    float startX = -((cols - 1) * spacingX) / 2.0f;
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             glm::vec3 pos(
-                startX + c * spacingX, // X: levo-desno
-                r * stepHeight,        // Y: visina (stepeničasto)
-                -r * spacingZ - 5.0f   // Z: udaljenost od platna
+                startX + c * spacingX,
+                r * stepHeight + seatHalf, // PODIGNUTO da dno kocke bude na stepenu
+                -r * spacingZ - 5.0f
             );
             seats3D.emplace_back(pos);
         }
     }
 }
-
 void Application::drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
     const glm::mat4& view, const glm::mat4& projection)
 {
@@ -399,6 +433,20 @@ bool Application::rayIntersectsAABB(const glm::vec3& rayOrig, const glm::vec3& r
     if (tzmin > tmin) tmin = tzmin;
     if (tzmax < tmax) tmax = tzmax;
 
-    // Intersection exists if the far intersection is in front of the ray origin
     return tmax >= 0.0f;
+}
+
+glm::vec3 Application::seatToWorldLocal(int row, int col) {
+    float spacingX = 1.0f;
+    float spacingZ = 1.0f;
+    float stepHeight = 0.3f;
+    int cols = seatService.getNumCols();
+    float startX = -((cols - 1) * spacingX) / 2.0f;
+    float seatHeight = !seats3D.empty() ? seats3D[0].size.y : 0.3f;
+    float seatHalf = seatHeight * 0.5f;
+    return glm::vec3(
+        startX + col * spacingX,
+        row * stepHeight + seatHalf,
+        -row * spacingZ - 5.0f
+    );
 }

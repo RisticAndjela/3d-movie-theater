@@ -29,7 +29,7 @@ private:
     float frameDuration = 1.0f / 24.0f;
     float acc = 0.0f;
     size_t current = 0;
-    bool playing = false;
+    bool playing = false; // NEW: whether projection is playing
 
     void ensureQuadInitialized() const;
 };
