@@ -120,8 +120,11 @@ void Application::run() {
         glCullFace(GL_FRONT);
         glEnable(GL_DEPTH_TEST);
 
+        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 100.0f);
+
         for (const auto& seat : seats3D) {
-            seat.draw(seatShader);
+            seat.draw(seatShader, view, projection);
         }
 
         glfwSwapBuffers(window);
@@ -141,6 +144,10 @@ void Application::processInput(double deltaTime) {
         glfwSetWindowShouldClose(window, true);
     }
 
+    // --- Rotacija AWSD ---
+    camera.processRotationKeyboard(window, (float)deltaTime);
+
+    // --- Pomeranje strelicama ---
     float forward = 0.0f;
     float right = 0.0f;
 
@@ -148,11 +155,12 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  forward -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) right += 1.0f;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  right -= 1.0f;
-	//std::cout << "Forward: " << forward << " Right: " << right << std::endl;
-    camera.processKeyboard(forward, right, (float)deltaTime);
-    camera.clampToBounds();
-    camera.clampToSeats(seats3D);     // novo – ograničenje po sedištima
 
+    camera.processKeyboard(forward, right, (float)deltaTime);
+
+    // --- Clamp po granicama i sedistima ---
+    camera.clampToBounds();
+    camera.clampToSeats(seats3D);
 }
 
 void Application::initSeats() {

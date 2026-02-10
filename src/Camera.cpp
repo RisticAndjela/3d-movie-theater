@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "figures3D/Seat3D.h"
 
@@ -12,23 +12,6 @@ glm::mat4 Camera::getViewMatrix() {
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     return glm::lookAt(position, position + glm::normalize(front), glm::vec3(0, 1, 0));
-}
-
-void Camera::processKeyboard(float forward, float right, float dt) {
-    glm::vec3 dir(cos(glm::radians(yaw)),0,sin(glm::radians(yaw)));
-
-    glm::vec3 rightVec = glm::normalize(glm::cross(dir, glm::vec3(0, 1, 0)));
-
-    position += dir * forward * speed * dt;
-    position += rightVec * right * speed * dt;
-}
-
-void Camera::processMouse(float xoffset, float yoffset) {
-    yaw += xoffset * sensitivity;
-    pitch += yoffset * sensitivity;
-
-    if (pitch > 89.0f) pitch = 89.0f;
-    if (pitch < -89.0f) pitch = -89.0f;
 }
 
 void Camera::clampToBounds() {
@@ -49,7 +32,6 @@ void Camera::clampToBounds() {
     if (position.z > MAX_Z) position.z = MAX_Z;
 }
 
-
 void Camera::clampToSeats(const std::vector<Seat3D>& seats) {
     float buffer = 0.3f; // koliko daleko od kvadra kamera sme da ide
     for (const auto& seat : seats) {
@@ -59,7 +41,7 @@ void Camera::clampToSeats(const std::vector<Seat3D>& seats) {
         if (position.x > min.x && position.x < max.x &&
             position.y > min.y && position.y < max.y &&
             position.z > min.z && position.z < max.z) {
-            // kamera je unutar kvadra sedi�ta � vrati je napolje
+            // kamera je unutar kvadra sedišta – vrati je napolje
             if (position.x - min.x < max.x - position.x) position.x = min.x;
             else position.x = max.x;
 
@@ -67,4 +49,35 @@ void Camera::clampToSeats(const std::vector<Seat3D>& seats) {
             else position.z = max.z;
         }
     }
+}
+
+void Camera::processRotationKeyboard(GLFWwindow* window, float deltaTime) {
+    // Rotacija u mestu: A/D za yaw, W/S za pitch
+    float rotSpeed = 50.0f; // stepeni po sekundi
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        pitch += rotSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        pitch -= rotSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        yaw -= rotSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        yaw += rotSpeed * deltaTime;
+
+    // ograničenje pitch-a da ne "flipuje"
+    if (pitch > 89.0f) pitch = 89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
+}
+
+void Camera::processKeyboard(float forward, float right, float deltaTime) {
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = 0.0f; // kretanje po ravni
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front = glm::normalize(front);
+
+    glm::vec3 rightVec = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+
+    position += front * forward * speed * deltaTime;
+    position += rightVec * right * speed * deltaTime;
 }

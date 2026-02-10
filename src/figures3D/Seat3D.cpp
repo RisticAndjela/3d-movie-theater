@@ -26,11 +26,13 @@ glm::vec3 Seat3D::getColor() const {
     return glm::vec3(1.0f);
 }
 
-void Seat3D::draw(unsigned int shaderProgram) const {
+void Seat3D::draw(unsigned int shaderProgram, const glm::mat4& view, const glm::mat4& projection) const {
     glUseProgram(shaderProgram);
 
     glm::mat4 model = getModelMatrix();
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, &projection[0][0]);
 
     glm::vec3 color = getColor();
     glUniform3f(glGetUniformLocation(shaderProgram, "color"), color.r, color.g, color.b);
