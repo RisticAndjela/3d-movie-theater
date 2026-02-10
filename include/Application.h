@@ -20,6 +20,7 @@ public:
     SeatService seatService{ 5, 10 };
     PersonManager* personManager = nullptr;
     Room3D room;
+    unsigned int LoadTexture(const char* path);
 
 private:
     int width;
@@ -32,6 +33,5 @@ private:
 
     void processInput(double deltaTime);
     void initSeats();
-    void drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,
-        const glm::mat4& view, const glm::mat4& projection);
+    void drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,const glm::mat4& view, const glm::mat4& projection);
 };

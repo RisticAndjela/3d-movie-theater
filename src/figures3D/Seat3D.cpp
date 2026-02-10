@@ -7,6 +7,7 @@
 // Staticki clanovi
 unsigned int Seat3D::cubeVAO = 0;
 unsigned int Seat3D::cubeVBO = 0;
+unsigned int Seat3D::seatTexture = 0;
 
 // Default konstruktor
 Seat3D::Seat3D()
@@ -69,23 +70,23 @@ void Seat3D::initCube() {
 
     float vertices[] = {
         // prednja strana
-        -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,  0.5f, -0.5f,  0.5f, 1.0f, 0.0f,  0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 1.0f, -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
          // zadnja strana
-         -0.5f, -0.5f, -0.5f, -0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f,
-          0.5f,  0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f,
+         -0.5f, -0.5f, -0.5f,0.0f, 0.0f, -0.5f,  0.5f, -0.5f,1.0f, 0.0f,   0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+          0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f,0.0f, 0.0f,
           // leva strana
-          -0.5f,  0.5f,  0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f, -0.5f,
-          -0.5f, -0.5f, -0.5f, -0.5f, -0.5f,  0.5f, -0.5f,  0.5f,  0.5f,
+          -0.5f,  0.5f,  0.5f,0.0f, 0.0f, -0.5f,  0.5f, -0.5f,1.0f, 0.0f,  -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+          -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, -0.5f,  0.5f,  0.5f,0.0f, 0.0f,
           // desna strana
-           0.5f,  0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,
-           0.5f, -0.5f, -0.5f,  0.5f,  0.5f, -0.5f,  0.5f,  0.5f,  0.5f,
+           0.5f,  0.5f,  0.5f,0.0f, 0.0f, 0.5f, -0.5f,  0.5f,1.0f, 0.0f,  0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+           0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.5f,  0.5f, -0.5f, 0.0f, 1.0f,  0.5f,  0.5f,  0.5f,0.0f, 0.0f,
            // gornja strana
-           -0.5f,  0.5f, -0.5f, -0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,
-            0.5f,  0.5f,  0.5f,  0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f,
+           -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f, 1.0f, 1.0f,  0.5f,  0.5f, -0.5f, 0.0f, 1.0f, -0.5f,  0.5f, -0.5f,0.0f, 0.0f,
             // donja strana
-            -0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, -0.5f, -0.5f, -0.5f
+            -0.5f, -0.5f, -0.5f,0.0f, 0.0f,  0.5f, -0.5f, -0.5f, 1.0f, 0.0f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f, 1.0f, 1.0f, -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f, 0.0f
     };
 
     glGenVertexArrays(1, &cubeVAO);
@@ -95,28 +96,34 @@ void Seat3D::initCube() {
     glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // texcoord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
 }
 
-// Render helper za sediste
 void Seat3D::renderCube(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& color, const glm::vec3& scale) {
     glUseProgram(shaderProgram);
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
     model = glm::scale(model, scale);
 
-    // promenjeno: "uModel" -> "model", "uColor" -> "color"
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniform3f(glGetUniformLocation(shaderProgram, "color"), color.r, color.g, color.b);
+
+    // aktiviraj i binduj teksturu
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Seat3D::seatTexture);
+    glUniform1i(glGetUniformLocation(shaderProgram, "seatTex"), 0);
 
     glBindVertexArray(Seat3D::cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 }
-
 // Render helper za osobu
 void Seat3D::renderPerson(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& bodyColor) {
     // telo

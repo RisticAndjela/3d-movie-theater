@@ -8,6 +8,8 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "model/Person.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #ifdef _WIN32
 static std::filesystem::path getExecutableDir() {
@@ -72,6 +74,11 @@ Application::Application(int w, int h)
     std::string seatFrag = (exeDir / "assets\\shaders\\seat.frag").string();
     seatShader = CreateShaderProgram(seatVert.c_str(), seatFrag.c_str());
     Seat3D::initCube();
+    std::string seatTexPath = (exeDir / "assets\\textures\\seat.png").string();
+    Seat3D::seatTexture = LoadTexture(seatTexPath.c_str());
+    if (Seat3D::seatTexture == 0) {
+        std::cerr << "Warning: seat texture not loaded\n";
+    }
     initSeats();
     if (!seats3D.empty()) {
         personManager = new PersonManager(seatService, seats3D[0]);
@@ -291,3 +298,27 @@ void Application::drawSteps(float xStart, float xEnd, int rowIndex, float stepHe
 
 }
 
+unsigned int Application::LoadTexture(const char* path) {
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+    if (!data) {
+        std::cerr << "Failed to load texture: " << path << std::endl;
+        return 0;
+    }
+    GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+    return texture;
+}

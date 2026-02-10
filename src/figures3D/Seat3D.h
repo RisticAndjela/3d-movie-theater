@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Shader.h"
 #include "../model/Seat.h"
-
+#include "stb_image.h" 
 class Seat3D {
 public:
     glm::vec3 position;
@@ -20,6 +20,7 @@ public:
 
     static unsigned int cubeVAO;
     static unsigned int cubeVBO;
+    static unsigned int seatTexture;
     static void initCube();
 
     static void renderCube(unsigned int shaderProgram, const glm::vec3& pos, const glm::vec3& color, const glm::vec3& scale = glm::vec3(1.0f));
