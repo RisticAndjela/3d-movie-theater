@@ -15,9 +15,9 @@ add_executable(Cinema3D
     src/Shader.cpp
     src/Camera.cpp
     src/Renderer.cpp
-    
+    src/figures3D/Seat3D.cpp 
     external/glad/src/glad.c
- "assets/models/OverlayRectangle.h" "assets/models/OverlayRectangle.cpp")
+ "assets/models/OverlayRectangle.h" "assets/models/OverlayRectangle.cpp"   "src/service/SeatService.cpp" "src/model/Person.h" "src/model/Seat.h" "src/figures3D/Seat3D.h")
 
 # OpenGL
 find_package(OpenGL REQUIRED)

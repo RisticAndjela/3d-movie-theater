@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "../src/figures3D/Seat3D.h"
 
 class Camera {
 public:
@@ -17,5 +18,5 @@ public:
     void processMouse(float xoffset, float yoffset);
 
     void clampToBounds();
-
+    void clampToSeats(const std::vector<Seat3D>& seats);
 };

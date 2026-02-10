@@ -67,6 +67,11 @@ Application::Application(int w, int h)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+    std::string seatVert = (exeDir / "assets\\shaders\\seat.vert").string();
+    std::string seatFrag = (exeDir / "assets\\shaders\\seat.frag").string();
+    seatShader = CreateShaderProgram(seatVert.c_str(), seatFrag.c_str());
+    Seat3D::initCube();
+    initSeats();
 }
 
 void Application::run() {
@@ -111,6 +116,14 @@ void Application::run() {
             glEnable(GL_DEPTH_TEST);
         }
 
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glEnable(GL_DEPTH_TEST);
+
+        for (const auto& seat : seats3D) {
+            seat.draw(seatShader);
+        }
+
         glfwSwapBuffers(window);
         glfwPollEvents();
 
@@ -135,7 +148,29 @@ void Application::processInput(double deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  forward -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) right += 1.0f;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  right -= 1.0f;
-
+	//std::cout << "Forward: " << forward << " Right: " << right << std::endl;
     camera.processKeyboard(forward, right, (float)deltaTime);
     camera.clampToBounds();
+    camera.clampToSeats(seats3D);     // novo – ograničenje po sedištima
+
+}
+
+void Application::initSeats() {
+    seats3D.clear();
+    int rows = 5;
+    int cols = 10;
+    float spacing = 1.0f;  // razmak između sedišta
+    float startX = -cols / 2.0f * spacing;
+    float startZ = -5.0f; // udaljenost od platna
+
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            glm::vec3 pos(
+                startX + c * spacing,
+                0.25f, // visina sedišta (centar kvadra)
+                startZ - r * spacing
+            );
+            seats3D.emplace_back(pos);
+        }
+    }
 }

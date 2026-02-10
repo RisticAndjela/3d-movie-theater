@@ -1,7 +1,8 @@
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include "figures3D/Seat3D.h"
 
-Camera::Camera(): position(0.0f, 0.0f, 3.0f),yaw(-90.0f),pitch(0.0f){}
+Camera::Camera(): position(0.0f, 0.0f, 3.0f),yaw(-90.0f),pitch(0.0f), speed(5.0f), sensitivity(0.1f) {}
 
 Camera::Camera(glm::vec3 startPos): position(startPos),yaw(-90.0f),pitch(0.0f),speed(5.0f),sensitivity(0.1f) {}
 
@@ -48,3 +49,22 @@ void Camera::clampToBounds() {
     if (position.z > MAX_Z) position.z = MAX_Z;
 }
 
+
+void Camera::clampToSeats(const std::vector<Seat3D>& seats) {
+    float buffer = 0.3f; // koliko daleko od kvadra kamera sme da ide
+    for (const auto& seat : seats) {
+        glm::vec3 min = seat.position - seat.size * 0.5f - glm::vec3(buffer);
+        glm::vec3 max = seat.position + seat.size * 0.5f + glm::vec3(buffer);
+
+        if (position.x > min.x && position.x < max.x &&
+            position.y > min.y && position.y < max.y &&
+            position.z > min.z && position.z < max.z) {
+            // kamera je unutar kvadra sedišta – vrati je napolje
+            if (position.x - min.x < max.x - position.x) position.x = min.x;
+            else position.x = max.x;
+
+            if (position.z - min.z < max.z - position.z) position.z = min.z;
+            else position.z = max.z;
+        }
+    }
+}
