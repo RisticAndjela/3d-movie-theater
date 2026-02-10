@@ -1,10 +1,13 @@
-#pragma once
+﻿#pragma once
 #include <glm/glm.hpp>
+#include "Screen.h"
 
 class Room3D {
 public:
     Room3D() = default;
     Room3D(const glm::vec3& minB, const glm::vec3& maxB);
+
+	Screen* screen = nullptr; // pokazivač na platno, može biti nullptr ako nema platna u sobi
 
     void setBounds(const glm::vec3& minB, const glm::vec3& maxB);
     void render(unsigned int shaderProgram, const glm::mat4& view, const glm::mat4& projection) const;

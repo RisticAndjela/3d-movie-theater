@@ -16,6 +16,7 @@ public:
     bool allGone() const;
     void renderSeats(unsigned int shaderProgram);
     void renderScene(unsigned int shaderProgram);
+    glm::vec3 seatToWorld(int row, int col) const;
 
 private:
     SeatService& seatService;
@@ -25,6 +26,5 @@ private:
     glm::vec3 entrancePos{ 0.0f, 0.0f, 0.0f };
     float speed = 2.0f;
 
-    glm::vec3 seatToWorld(int row, int col) const;
     bool moveTowards(glm::vec3& pos, const glm::vec3& target, float dt);
 };

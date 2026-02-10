@@ -20,7 +20,14 @@ public:
     SeatService seatService{ 5, 10 };
     PersonManager* personManager = nullptr;
     Room3D room;
+    Screen screen;
     unsigned int LoadTexture(const char* path);
+
+    glm::vec3 screenPointToWorldRay(double mouseX, double mouseY, const glm::mat4& view, const glm::mat4& projection);
+
+    void onMouseClick(double mouseX, double mouseY);
+
+    static bool rayIntersectsAABB(const glm::vec3& rayOrig, const glm::vec3& rayDir, const glm::vec3& minB, const glm::vec3& maxB);
 
 private:
     int width;
@@ -35,3 +42,4 @@ private:
     void initSeats();
     void drawSteps(float xStart, float xEnd, int rowIndex, float stepHeight, float spacingZ,const glm::mat4& view, const glm::mat4& projection);
 };
+

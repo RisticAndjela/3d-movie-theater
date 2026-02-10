@@ -84,6 +84,13 @@ Application::Application(int w, int h)
         personManager = new PersonManager(seatService, seats3D[0]);
     }
 
+    // Učitaj frejmove za platno
+    std::string framesPath = (exeDir / "assets\\textures\\screen_frames").string();
+    if (!screen.loadFramesFromFolder(framesPath)) {
+        std::cerr << "Warning: screen frames not loaded\n";
+    }
+    screen.setFrameDuration(1.0f / 24.0f);
+
     float margin = 10.0f;
     float seatWidth = 1.0f; 
     float seatDepth = 1.0f;
@@ -113,6 +120,7 @@ void Application::run() {
         // --- obrada inputa ---
         processInput(deltaTime);
         personManager->update((float)deltaTime);
+        if (screen.isPlaying()) screen.update((float)deltaTime);
 
         // --- čišćenje ekrana ---
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
@@ -214,9 +222,11 @@ void Application::processInput(double deltaTime) {
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed) {
         personManager->spawnPeople();
+        screen.play();
         spacePressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+        screen.stop();
         spacePressed = false;
     static bool keyPressed[10] = { false };
 
@@ -322,4 +332,73 @@ unsigned int Application::LoadTexture(const char* path) {
 
     stbi_image_free(data);
     return texture;
+}
+
+glm::vec3 Application::screenPointToWorldRay(double mouseX, double mouseY, const glm::mat4 & view, const glm::mat4 & projection) {
+    int w = width, h = height;
+    // NDC
+    float x = (2.0f * (float)mouseX) / w - 1.0f;
+    float y = 1.0f - (2.0f * (float)mouseY) / h;
+    glm::vec4 rayClip(x, y, -1.0f, 1.0f);
+    glm::vec4 rayEye = glm::inverse(projection) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
+    glm::vec4 rayWorld4 = glm::inverse(view) * rayEye;
+    glm::vec3 rayWorld = glm::normalize(glm::vec3(rayWorld4));
+    return rayWorld;
+}
+
+void Application::onMouseClick(double mouseX, double mouseY) {
+    glm::mat4 view = camera.getViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 100.0f);
+    glm::vec3 rayDir = screenPointToWorldRay(mouseX, mouseY, view, projection);
+    glm::vec3 rayOrigin = camera.position;
+
+    // testiraj sve sedece
+    for (int r = 0; r < seatService.getNumRows(); ++r) {
+        for (int c = 0; c < seatService.getNumCols(); ++c) {
+            Seat* s = seatService.getSeat(r, c);
+            glm::vec3 seatPos = personManager->seatToWorld(r, c); // make seatToWorld public, or compute same
+            glm::vec3 half = seats3D[0].size * 0.5f;
+            glm::vec3 min = seatPos - half;
+            glm::vec3 max = seatPos + half;
+            float tmin, tmax;
+            // ray-AABB intersection (slight utility) - implement standard slab test
+            if (rayIntersectsAABB(rayOrigin, rayDir, min, max)) {
+                // rezerviši / kupi sedište
+                seatService.markBought(s); // ili odgovarajuća metoda
+                personManager->spawnPeople(); // osveži ljude ili šta treba
+                return;
+            }
+        }
+    }
+}
+
+bool Application::rayIntersectsAABB(const glm::vec3& rayOrig, const glm::vec3& rayDir,
+    const glm::vec3& minB, const glm::vec3& maxB)
+{
+    const float EPS = 1e-8f;
+    float tmin = (minB.x - rayOrig.x) / (fabs(rayDir.x) > EPS ? rayDir.x : (rayDir.x < 0 ? -EPS : EPS));
+    float tmax = (maxB.x - rayOrig.x) / (fabs(rayDir.x) > EPS ? rayDir.x : (rayDir.x < 0 ? -EPS : EPS));
+    if (tmin > tmax) std::swap(tmin, tmax);
+
+    float tymin = (minB.y - rayOrig.y) / (fabs(rayDir.y) > EPS ? rayDir.y : (rayDir.y < 0 ? -EPS : EPS));
+    float tymax = (maxB.y - rayOrig.y) / (fabs(rayDir.y) > EPS ? rayDir.y : (rayDir.y < 0 ? -EPS : EPS));
+    if (tymin > tymax) std::swap(tymin, tymax);
+
+    if ((tmin > tymax) || (tymin > tmax)) return false;
+
+    if (tymin > tmin) tmin = tymin;
+    if (tymax < tmax) tmax = tymax;
+
+    float tzmin = (minB.z - rayOrig.z) / (fabs(rayDir.z) > EPS ? rayDir.z : (rayDir.z < 0 ? -EPS : EPS));
+    float tzmax = (maxB.z - rayOrig.z) / (fabs(rayDir.z) > EPS ? rayDir.z : (rayDir.z < 0 ? -EPS : EPS));
+    if (tzmin > tzmax) std::swap(tzmin, tzmax);
+
+    if ((tmin > tzmax) || (tzmin > tmax)) return false;
+
+    if (tzmin > tmin) tmin = tzmin;
+    if (tzmax < tmax) tmax = tzmax;
+
+    // Intersection exists if the far intersection is in front of the ray origin
+    return tmax >= 0.0f;
 }
