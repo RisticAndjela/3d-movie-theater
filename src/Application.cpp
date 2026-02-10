@@ -129,6 +129,9 @@ void Application::run() {
         glUniformMatrix4fv(glGetUniformLocation(seatShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // --- crtanje sedista i ljudi ---
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
         personManager->renderScene(seatShader);
 
         // --- crtanje stepenica ---

@@ -108,8 +108,9 @@ void Seat3D::renderCube(unsigned int shaderProgram, const glm::vec3& pos, const 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
     model = glm::scale(model, scale);
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uModel"), 1, GL_FALSE, glm::value_ptr(model));
-    glUniform3f(glGetUniformLocation(shaderProgram, "uColor"), color.r, color.g, color.b);
+    // promenjeno: "uModel" -> "model", "uColor" -> "color"
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniform3f(glGetUniformLocation(shaderProgram, "color"), color.r, color.g, color.b);
 
     glBindVertexArray(Seat3D::cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);

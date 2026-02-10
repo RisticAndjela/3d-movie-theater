@@ -131,11 +131,10 @@ void PersonManager::renderSeats(unsigned int shaderProgram) {
             Seat* s = seatService.getSeat(r, c);
             glm::vec3 color = seat3D.getSeatColor(s);
             glm::vec3 pos = seatToWorld(r, c);
-            seat3D.renderCube(shaderProgram, pos, color);
+            seat3D.renderCube(shaderProgram, pos, color, seat3D.size);
         }
     }
 }
-
 void PersonManager::renderScene(unsigned int shaderProgram) {
     renderSeats(shaderProgram); // prvo sedista
 
